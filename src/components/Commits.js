@@ -10,22 +10,23 @@ import TableCell from '@material-ui/core/TableCell';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Typography from '@material-ui/core/Typography';
-import React, { useState } from 'react';
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
 import BarGraph from './widgets/BarGraph';
 
 
 const useStyles = makeStyles(theme => ({
   borderContainer: {
-    maxWidth: '25em',
+    maxWidth: '30em',
     alignSelf: 'center',
     outline: '1px solid #bcc3ce',
     marginTop: '2em',
-
+    marginBottom: '2em',
     [theme.breakpoints.up('xs')]: {
       width: '100%'
     },
     [theme.breakpoints.up('sm')]: {
-      width: '25em'
+      width: '30em'
     }
   },
   form: {
@@ -62,6 +63,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const Commits = (props) => {
+  const apiUrl = process.env.REACT_APP_API_URL;
   const classes = useStyles();
   const [repoUrlFieldFocused, setRepoTextFieldFocused] = useState(false);
   const [timespanFieldFocused, setTimespanFieldFocused] = useState(false);
@@ -72,13 +74,72 @@ const Commits = (props) => {
     { id: 3, timeUnit: 'MONTH', timeAmount: 1, displayCaption: 'Last Month' },
   ];
   const [selectedTimespan, setSelectedTimespan] = useState(timespanOptions[0].displayCaption);
-  const commitCountServiceUrl = 'localhost:8082/commitCounts';
 
-  {/*test data */ }
-  const commitRecords = [
-    { "username": "zane", "commits": "5" },
-    { "username": "tito", "commits": "3" }
-  ];
+  const [commitRecords, setCommitRecords] = useState([]);
+
+  const fetchData = () => {
+
+    const timeObject = timespanOptions.filter((item) => item.displayCaption == selectedTimespan)[0];
+    console.log('time object to parameterise', timeObject);
+    console.log('githubRepoUrl', repoUrl);
+    console.log('server url=', apiUrl)
+
+    axios.get(apiUrl, {
+      params: {
+        githubRepoUrl: repoUrl,
+        timeUnit: timeObject.timeUnit,
+        timeAmount: timeObject.timeAmount
+      }
+    })
+      .then(res => {
+        const results =  res.data;
+        console.log('returned results=',results);
+        if (results && results.length > 0) {
+            setCommitRecords( results);
+        } else {
+          alert('No records found for this time period.')
+        }
+
+      })
+      .catch(error => {
+        alert('Something went wrong whilst trying to fulfill your request.')
+        console.log('something went wrong', error);
+      });
+  }
+
+  const resultsView = (commitRecords.length > 0) ? (
+    <React.Fragment>
+      {/* Results container */}
+      <Grid item direction='column'>
+        <Table aria-label="simple table">
+          <TableHead>
+            <TableRow>
+              <TableCell style={{ fontWeight: 700 }}>Username</TableCell>
+              <TableCell style={{ fontWeight: 700 }}>Commit Cnt</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody className={classes.table} >
+            {commitRecords.map((row) => (
+              <TableRow key={row.username}>
+                <TableCell component="th" scope="row">
+                  {row.username}
+                </TableCell>
+                <TableCell >{row.commits}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Grid>
+      {/*Bar Chart*/}
+      <Grid item container direction='column' align='center'>
+        <Typography style={{ marginTop: '3em', fontWeight: 700, marginBottom: '1em' }} align='center'>User Commits Chart</Typography>
+        <Grid item>
+          {(commitRecords.length > 0) ? <BarGraph data={commitRecords} /> : null}
+        </Grid>
+      </Grid>
+    </React.Fragment>) 
+    : null
+    ;
 
   return (
     <Grid container direction='column' style={{ width: '100%' }}>
@@ -125,38 +186,10 @@ const Commits = (props) => {
             </ClickAwayListener>
           </Grid>
           <Grid item>
-            <Button className={classes.button}>Update Stats</Button>
-          </Grid>
-
-        </Grid>
-        {/* Results table container */}
-        <Grid item direction='column'>
-          <Table aria-label="simple table">
-            <TableHead>
-              <TableRow>
-                <TableCell style={{ fontWeight: 700 }}>Username</TableCell>
-                <TableCell style={{ fontWeight: 700 }} align="right">Commit Cnt</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody className={classes.table} >
-              {commitRecords.map((row) => (
-                <TableRow key={row.username}>
-                  <TableCell component="th" scope="row">
-                    {row.username}
-                  </TableCell>
-                  <TableCell align="right">{row.commits}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Grid>
-        {/* Bar Chart */}
-        <Grid item container direction='column' align='center'>
-          <Typography style={{ marginTop: '3em', fontWeight: 700, marginBottom: '1em' }} align='center'>User Commits Chart</Typography>
-          <Grid item>
-            <BarGraph data={commitRecords} />
+            <Button className={classes.button} onClick={fetchData}>Update Stats</Button>
           </Grid>
         </Grid>
+        {resultsView}
       </Grid>
     </Grid>
   )

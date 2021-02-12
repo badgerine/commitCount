@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import { makeStyles, useTheme } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
@@ -16,18 +17,45 @@ import TableRow from '@material-ui/core/TableRow';
 
 const useStyles = makeStyles(theme => ({
   borderContainer: {
+    maxWidth: '25em',
+    alignSelf: 'center',
+    outline: '1px solid #bcc3ce',
+    marginTop: '2em',
 
+    [theme.breakpoints.up('xs')]: {
+      width: '100%'
+    },
+    [theme.breakpoints.up('sm')]: {
+      width: '25em'
+    }
   },
-  margin: {
-    margin: theme.spacing(1),
-  },
-  formControl: {
-    margin: theme.spacing(1),
-    minWidth: 120,
+  form: {
+    padding: '2rem',
+    [theme.breakpoints.down('xs')]: {
+      padding: '1rem'
+    }
+    
   },
   table: {
-
+    color: '#3b4351',
+    backgroundColor: '#eef0f3'
   },
+  input: {
+    outline: '1px solid lightgray',
+    paddingLeft: '0.5rem',
+    marginBottom: '1em',
+    width: '100%'
+  },
+  button: {
+    outline: '1px solid blue',
+    borderRadius: 0,
+    color: 'blue',
+    marginTop: '1em',
+    textTransform: 'none'
+  },
+  labelItem: {
+    marginBottom: '0.5em'
+  }
 }));
 
 const Commits = (props) => {
@@ -41,6 +69,7 @@ const Commits = (props) => {
     { id: 3, timeUnit: 'MONTH', timeAmount: 1, displayCaption: 'Last Month' },
   ];
   const [selectedTimespan, setSelectedTimespan] = useState(timespanOptions[0].displayCaption);
+  const commitCountServiceUrl = 'localhost:8082/commitCounts';
 
   {/*test data */ }
   const commitRecords = [
@@ -49,29 +78,33 @@ const Commits = (props) => {
   ];
 
   return (
-    <Grid container direction='column'>
+    <Grid container direction='column' style={{ width: '100%' }}>
       {/* Main bordered container */}
-      <Grid item container direction='column' className={classes.borderContainer}>
+      <Grid item direction='column' className={classes.borderContainer}>
         {/* Input form container */}
-        <Grid item container direction='column'>
-          <Grid item>
-            <Typography>Repo URL</Typography>
-            <TextField
-              variant="outlined"
-              value={repoUrl}
-              id='repoUrl'
-              placeholder='Repository Url (e.g. https://github.com/facebook/react/)'
-              onChange={event => setRepoUrl(event.target.value)}
-            />
+        <Grid item container direction='column' className={classes.form}>
+          <Grid item className={classes.labelItem}>
+            <Typography >Repo URL</Typography>
           </Grid>
           <Grid item>
+            <TextField
+              InputProps={{ disableUnderline: true }}
+              value={repoUrl}
+              id='repoUrlTxt'
+              placeholder='Repository Url (e.g. https://github.com/facebook/react/)'
+              onChange={event => setRepoUrl(event.target.value)}
+              className={classes.input}
+            />
+          </Grid>
+          <Grid item className={classes.labelItem}>
             <Typography>Timespan</Typography>
-            <FormControl variant="outlined" className={classes.margin}>
+          </Grid>
+          <Grid item>
+            <FormControl className={classes.input}>
               <Select
                 labelId="timespan-label"
                 id="timespan-select"
                 value={selectedTimespan}
-                // defaultValue={timespanOptions[0]}
                 onChange={event => setSelectedTimespan(event.target.value)}
               >
                 {timespanOptions.map(option => (
@@ -81,30 +114,30 @@ const Commits = (props) => {
             </FormControl>
           </Grid>
           <Grid item>
-            <Button variant='outlined'>Update Stats</Button>
+            <Button className={classes.button}>Update Stats</Button>
           </Grid>
 
         </Grid>
         {/* Results table container */}
         <Grid item direction='column'>
-            <Table className={classes.table} aria-label="simple table">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Username</TableCell>
-                  <TableCell align="right">Commit Cnt</TableCell>
+          <Table aria-label="simple table">
+            <TableHead>
+              <TableRow>
+                <TableCell style={{fontWeight: 700}}>Username</TableCell>
+                <TableCell  style={{fontWeight: 700}} align="right">Commit Cnt</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody className={classes.table} >
+              {commitRecords.map((row) => (
+                <TableRow key={row.username}>
+                  <TableCell component="th" scope="row">
+                    {row.username}
+                  </TableCell>
+                  <TableCell align="right">{row.commits}</TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {commitRecords.map((row) => (
-                  <TableRow key={row.username}>
-                    <TableCell component="th" scope="row">
-                      {row.username}
-                    </TableCell>
-                    <TableCell align="right">{row.commits}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+              ))}
+            </TableBody>
+          </Table>
         </Grid>
       </Grid>
     </Grid>

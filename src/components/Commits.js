@@ -1,19 +1,18 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { makeStyles, useTheme } from '@material-ui/core/styles';
-import Grid from '@material-ui/core/Grid';
-import Typography from '@material-ui/core/Typography';
-import InputLabel from '@material-ui/core/InputLabel';
-import MenuItem from '@material-ui/core/MenuItem';
-import FormControl from '@material-ui/core/FormControl';
-import Select from '@material-ui/core/Select';
 import { Button, TextField } from '@material-ui/core';
+import ClickAwayListener from '@material-ui/core/ClickAwayListener';
+import FormControl from '@material-ui/core/FormControl';
+import Grid from '@material-ui/core/Grid';
+import NativeSelect from '@material-ui/core/NativeSelect';
+import { makeStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
+import Typography from '@material-ui/core/Typography';
+import React, { useState } from 'react';
+import BarGraph from './widgets/BarGraph';
+
 
 const useStyles = makeStyles(theme => ({
   borderContainer: {
@@ -34,7 +33,7 @@ const useStyles = makeStyles(theme => ({
     [theme.breakpoints.down('xs')]: {
       padding: '1rem'
     }
-    
+
   },
   table: {
     color: '#3b4351',
@@ -44,7 +43,11 @@ const useStyles = makeStyles(theme => ({
     outline: '1px solid lightgray',
     paddingLeft: '0.5rem',
     marginBottom: '1em',
-    width: '100%'
+    width: '100%',
+  },
+  active: {
+    border: '1px solid blue',
+    boxShadow: '0 0 2px 0',
   },
   button: {
     outline: '1px solid blue',
@@ -60,8 +63,8 @@ const useStyles = makeStyles(theme => ({
 
 const Commits = (props) => {
   const classes = useStyles();
-  const theme = useTheme();
-
+  const [repoUrlFieldFocused, setRepoTextFieldFocused] = useState(false);
+  const [timespanFieldFocused, setTimespanFieldFocused] = useState(false);
   const [repoUrl, setRepoUrl] = useState('');
   const timespanOptions = [
     { id: 1, timeUnit: 'HOUR', timeAmount: 24, displayCaption: 'Last 24 Hours' },
@@ -87,31 +90,39 @@ const Commits = (props) => {
             <Typography >Repo URL</Typography>
           </Grid>
           <Grid item>
-            <TextField
-              InputProps={{ disableUnderline: true }}
-              value={repoUrl}
-              id='repoUrlTxt'
-              placeholder='Repository Url (e.g. https://github.com/facebook/react/)'
-              onChange={event => setRepoUrl(event.target.value)}
-              className={classes.input}
-            />
+            <ClickAwayListener onClickAway={() => setRepoTextFieldFocused()}>
+              <TextField
+                InputProps={{ disableUnderline: true }}
+                value={repoUrl}
+                id='repoUrlTxt'
+                placeholder='Repository Url (e.g. https://github.com/facebook/react/)'
+                onChange={event => setRepoUrl(event.target.value)}
+                onFocus={() => setRepoTextFieldFocused(true)}
+                className={repoUrlFieldFocused ? [classes.input, classes.active].join(' ') : classes.input}
+              />
+            </ClickAwayListener>
           </Grid>
           <Grid item className={classes.labelItem}>
             <Typography>Timespan</Typography>
           </Grid>
           <Grid item>
-            <FormControl className={classes.input}>
-              <Select
-                labelId="timespan-label"
-                id="timespan-select"
-                value={selectedTimespan}
-                onChange={event => setSelectedTimespan(event.target.value)}
-              >
-                {timespanOptions.map(option => (
-                  <option key={option.id} value={option.displayCaption}>{option.displayCaption}</option>
-                ))}
-              </Select>
-            </FormControl>
+            <ClickAwayListener onClickAway={() => setTimespanFieldFocused(false)}>
+              <FormControl InputProps={{ disableUnderline: true }}
+                className={timespanFieldFocused ? [classes.input, classes.active].join(' ') : classes.input}>
+                <NativeSelect
+                  disableUnderline
+                  labelId="timespan-label"
+                  id="timespan-select"
+                  value={selectedTimespan}
+                  onChange={event => setSelectedTimespan(event.target.value)}
+                  onFocus={() => setTimespanFieldFocused(true)}
+                >
+                  {timespanOptions.map(option => (
+                    <option key={option.id} value={option.displayCaption}>{option.displayCaption}</option>
+                  ))}
+                </NativeSelect>
+              </FormControl>
+            </ClickAwayListener>
           </Grid>
           <Grid item>
             <Button className={classes.button}>Update Stats</Button>
@@ -123,8 +134,8 @@ const Commits = (props) => {
           <Table aria-label="simple table">
             <TableHead>
               <TableRow>
-                <TableCell style={{fontWeight: 700}}>Username</TableCell>
-                <TableCell  style={{fontWeight: 700}} align="right">Commit Cnt</TableCell>
+                <TableCell style={{ fontWeight: 700 }}>Username</TableCell>
+                <TableCell style={{ fontWeight: 700 }} align="right">Commit Cnt</TableCell>
               </TableRow>
             </TableHead>
             <TableBody className={classes.table} >
@@ -138,6 +149,13 @@ const Commits = (props) => {
               ))}
             </TableBody>
           </Table>
+        </Grid>
+        {/* Bar Chart */}
+        <Grid item container direction='column' align='center'>
+          <Typography style={{ marginTop: '3em', fontWeight: 700, marginBottom: '1em' }} align='center'>User Commits Chart</Typography>
+          <Grid item>
+            <BarGraph data={commitRecords} />
+          </Grid>
         </Grid>
       </Grid>
     </Grid>
